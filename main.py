@@ -1,16 +1,16 @@
 import math
 import time
 
-PLAYER = 'O'  # 人間プレイヤー
-AI = 'X'      # コンピュータ
+PLAYER = 'O'  # human
+AI = 'X'      # AI
 MAX_NUM = 5
 MAX_DEPTH = 6
 
-# メモ化用の辞書
+# dict for memoization
 memo = {}
 
 def board_to_tuple(board):
-    """盤面をタプルに変換してハッシュ可能にする"""
+    """hash possible board state"""
     return tuple(tuple(row) for row in board)
 
 def print_board(board):
@@ -45,6 +45,9 @@ def is_full(board):
 def count_empty_cells(board):
     return sum(row.count(' ') for row in board)
 
+# custom max depth based on the number of empty cells
+# this is a simple heuristic to adjust the depth of the minimax algorithm
+# based on the number of empty cells on the board
 def create_custom_max_depth(board):
     empty_cells = count_empty_cells(board)
     if empty_cells > 20:
@@ -64,15 +67,18 @@ def minimax(board, depth, is_maximizing, alpha, beta, max_depth=5):
     if depth >= max_depth:
         return 0
     
+    # this is a hash key for the current board state
+    # to avoid recalculating the same state
+    # in the minimax algorithm
     board_key = board_to_tuple(board)
     
     if board_key in memo:
         return memo[board_key]
     
     if check_winner(board, AI):
-        return 1
+        return (20-depth)
     if check_winner(board, PLAYER):
-        return -1
+        return (depth-20)
     if is_full(board):
         return 0
 
@@ -101,6 +107,9 @@ def minimax(board, depth, is_maximizing, alpha, beta, max_depth=5):
                     if beta <= alpha:
                         break
     
+    # memoize the best score for the current board state
+    # to avoid recalculating the same state
+    # in the minimax algorithm
     memo[board_key] = best_score
     return best_score
 
@@ -123,39 +132,37 @@ def best_move(board):
                     
     end_time = time.time()
     elapsed_time = end_time - start_time
-    print(f"コンピュータの思考時間: {elapsed_time:.4f}秒")
+    print(f"computer thinking time: {elapsed_time:.4f}s")
     return move
 
 def main():
     board = [[' ' for _ in range(MAX_NUM)] for _ in range(MAX_NUM)]
-    print("五目並べスタート！あなたはO（先手）です")
+    print("game start")
     print_board(board)
 
     while True:
-        # プレイヤーのターン
         while True:
             try:
-                row = int(input("行 (0-4): "))
-                col = int(input("列 (0-4): "))
+                row = int(input("row (0-4): "))
+                col = int(input("column (0-4): "))
                 if board[row][col] == ' ':
                     board[row][col] = PLAYER
                     break
                 else:
-                    print("そのマスはすでに埋まっています。")
+                    print("the cell is already occupied.")
             except (ValueError, IndexError):
-                print("0〜4の範囲で入力してください。")
+                print("please enter a valid row and column (0-4).")
 
         print_board(board)
 
         if check_winner(board, PLAYER):
-            print("あなたの勝ち！")
+            print("you win!")
             break
         if is_full(board):
-            print("引き分けです。")
+            print("withdraw.")
             break
 
-        # コンピュータのターン
-        print("コンピュータのターン...")
+        print("AI's turn")
         move = best_move(board)
         if move:
             board[move[0]][move[1]] = AI
@@ -163,10 +170,10 @@ def main():
         print_board(board)
 
         if check_winner(board, AI):
-            print("コンピュータの勝ち！")
+            print("AI win!")
             break
         if is_full(board):
-            print("引き分けです。")
+            print("withdraw.")
             break
 
 if __name__ == '__main__':
